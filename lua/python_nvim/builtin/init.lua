@@ -69,6 +69,18 @@ local lineIsIndented = function (line)
 	return char == " " or char == '\t'
 end
 
+local blacklist = function(line)
+	local blacklist = {"except", "else", "elif"}
+	for _, items in ipairs(blacklist) do
+		local find = string.find(line, items)
+		if find == 1 then
+			return true
+		end
+	end
+	-- print(type(string.find(line, "except")[1]))
+	return false
+end
+
 local sendLine = function (line, term)
 	if line == "" then
 		return
@@ -76,7 +88,7 @@ local sendLine = function (line, term)
 
 	if lineIsIndented(line) then
 		M.previously_indented = true
-	elseif M.previously_indented then
+	elseif M.previously_indented and not blacklist(line) then
 		require("harpoon.term").sendCommand(term, "\n")
 		M.previously_indented = false
 	end

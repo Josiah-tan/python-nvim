@@ -1,8 +1,8 @@
-.PHONY: docs publish
+.PHONY: docs test
 
 docs: README.org
 	pandoc -s README.org -o README.md -t gfm
 
-publish: setup.cfg
-	python3 setup.py sdist bdist_wheel
-	twine upload dist/*
+test: lua/tests/test.py
+	nvim $^ -c "lua require('tests')"
+		
