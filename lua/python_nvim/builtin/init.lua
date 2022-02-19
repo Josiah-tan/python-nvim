@@ -1,3 +1,5 @@
+local _opts = require("python_nvim")._config
+
 local M = {
 	was_init = false,
 	previously_indented = false
@@ -19,8 +21,11 @@ local function getAnacondaVenv()
 end
 
 
-local function wrapVenvOutput(term, output)
-	if venvExists() then
+local function wrapVenvOutput(term, output, opts)
+	if opts.source ~= "" then
+		local source = vim.trim(opts.source)
+		return require("harpoon.term").sendCommand(term, "%s %s && %s && %s\n", "source", source, output, "deactivate")
+	elseif venvExists() then
 		return require("harpoon.term").sendCommand(term, "%s && %s && %s\n", "source env/bin/activate", output, "deactivate")
 	-- else
 		-- return require("harpoon.term").sendCommand(term, output .. "\n")
@@ -34,18 +39,20 @@ local function wrapVenvOutput(term, output)
 	end
 end
 
-M.sourceVenv = function(term)
+M.sourceVenv = function(term, opts)
+	opts = vim.tbl_deep_extend("force", _opts, opts or {})
 	local file = vim.fn.expand("%")
-	wrapVenvOutput(term, string.format("python3 %s", file))
+	wrapVenvOutput(term, string.format("python3 %s", file), opts)
 	require("harpoon.term").gotoTerminal(term)
 end
 
-M.sourceInstallModules = function(term)
+M.sourceInstallModules = function(term, opts)
+	opts = vim.tbl_deep_extend("force", _opts, opts or {})
 	local prompt = "enter python module for installation: "
 	local response = vim.trim(vim.fn.input({prompt = prompt, cancelreturn = ""}))
 	local res
 	if string.len(response) ~= 0 then
-		res = wrapVenvOutput(term, string.format("pip3 install %s", response))
+		res = wrapVenvOutput(term, string.format("pip3 install %s", response), opts)
 	end
 	return res
 end
@@ -98,13 +105,15 @@ local sendLine = function (line, term)
 	end
 end
 
-M.PythonInit = function(term)
-	wrapVenvOutput(term, "python3")
+M.PythonInit = function(term, opts)
+	opts = vim.tbl_deep_extend("force", _opts, opts or {})
+	wrapVenvOutput(term, "python3", opts)
 	M.was_init = true
 end
 
 -- code for having a jupyter like experience
-M.runPythonSelection = function(term)
+M.runPythonSelection = function(term, opts)
+	opts = vim.tbl_deep_extend("force", _opts, opts or {})
 	local lower = vim.fn.getpos("v")[2]
 	local upper = vim.fn.getpos(".")[2]
 	if M.was_init == false then
@@ -120,7 +129,8 @@ M.runPythonSelection = function(term)
 	require("harpoon.term").sendCommand(term, "\n")
 end
 
-M.runPythonBlock = function(term)
+M.runPythonBlock = function(term, opts)
+	opts = vim.tbl_deep_extend("force", _opts, opts or {})
 	if M.was_init == false then
 		M.PythonInit(term)
 	end
@@ -146,7 +156,8 @@ M.runPythonBlock = function(term)
 	require("harpoon.term").sendCommand(term, "\n")
 end
 
-M.runPythonLineNoIndent = function (term)
+M.runPythonLineNoIndent = function (term, opts)
+	opts = vim.tbl_deep_extend("force", _opts, opts or {})
 	if M.was_init == false then
 		M.PythonInit(term)
 	end
